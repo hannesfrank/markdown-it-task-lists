@@ -1,3 +1,13 @@
+# 2.2.0 (2021-03-16)
+
+* Fix rendering of inline formatting (strong, em, code) when the
+  `labelAfter` option is enabled
+* Add the class `task-list-item-label` always to `<label>` elements.
+
+# 2.1.0 (2017-10-24)
+
+* Added support for `{labelAfter: true}` option, to render the `<label>` after the checkbox
+
 # 2.0.0 (2017-03-31)
 
 * Change the list element's class from `task-list` to `contains-task-list` to
