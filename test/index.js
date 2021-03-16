@@ -6,27 +6,28 @@ var md = require('markdown-it');
 var cheerio = require('cheerio');
 var taskLists = require('..');
 
-describe('markdown-it-task-lists', function() {
+describe('markdown-it-task-lists', function () {
     var fixtures = {}, rendered = {}, $ = {}, parser;
 
-    before(function() {
+    before(function () {
         var files = {
             bullet: 'bullet.md',
             ordered: 'ordered.md',
             mixedNested: 'mixed-nested.md',
-            dirty: 'dirty.md'
+            dirty: 'dirty.md',
+            withFormatting: 'with-formatting.md'
         };
 
         parser = md().use(taskLists);
 
         for (var key in files) {
             fixtures[key] = fs.readFileSync(__dirname + '/fixtures/' + files[key]).toString();
-            rendered[key] = parser.render(fixtures[key]);
-            $[key] = cheerio.load(rendered[key]);
+            //rendered[key] = parser.render(fixtures[key]);
+            // $[key] = cheerio.load(rendered[key]);
         }
     });
 
-    it('renders tab-indented code differently than default markdown-it', function() {
+    it('renders tab-indented code differently than default markdown-it', function () {
         var parserDefault = md();
         var parserWithPlugin = md().use(taskLists);
         assert.notEqual(parserDefault.render(fixtures.bullet), parserWithPlugin.render(fixtures.bullet));
@@ -51,13 +52,13 @@ describe('markdown-it-task-lists', function() {
     });
 
     it('enables the rendered checkboxes when options.enabled is truthy', function () {
-        var enabledParser = md().use(taskLists, {enabled: true});
+        var enabledParser = md().use(taskLists, { enabled: true });
         var $$ = cheerio.load(enabledParser.render(fixtures.ordered));
         assert($$('input[type=checkbox].task-list-item-checkbox:not([disabled])').length > 0);
     });
 
     it('adds class `enabled` to <li> elements when options.enabled is truthy', function () {
-        var enabledParser = md().use(taskLists, {enabled: true});
+        var enabledParser = md().use(taskLists, { enabled: true });
         var $$ = cheerio.load(enabledParser.render(fixtures.ordered));
         assert.equal($$('.task-list-item:not(.enabled)').length, 0);
     });
@@ -70,27 +71,49 @@ describe('markdown-it-task-lists', function() {
     });
 
     it('does not render wrapping <label> elements when options.label is falsy', function () {
-        var unlabeledParser = md().use(taskLists, {label: false});
+        var unlabeledParser = md().use(taskLists, { label: false });
         var $$ = cheerio.load(unlabeledParser.render(fixtures.ordered));
         assert.equal(0, $$('label').length);
     });
 
     it("wraps the rendered list items' contents in a <label> element when options.label is truthy", function () {
-        var labeledParser = md().use(taskLists, {label: true});
+        var labeledParser = md().use(taskLists, { label: true });
         var $$ = cheerio.load(labeledParser.render(fixtures.ordered));
         assert($$('.task-list-item > label > input[type=checkbox].task-list-item-checkbox').length > 0);
     });
 
     it('wraps and enables items when options.enabled and options.label are truthy', function () {
-        var enabledLabeledParser = md().use(taskLists, {enabled: true, label: true});
+        var enabledLabeledParser = md().use(taskLists, { enabled: true, label: true });
         var $$ = cheerio.load(enabledLabeledParser.render(fixtures.ordered));
         assert($$('.task-list-item > label > input[type=checkbox].task-list-item-checkbox:not([disabled])').length > 0);
     });
 
-    it('adds label after items when options.label and options.labelAfter are truthy', function() {
-      var enabledLabeledParser = md().use(taskLists, {enabled: true, label: true, labelAfter: true});
-      var $$ = cheerio.load(enabledLabeledParser.render(fixtures.ordered));
-      assert( $$('.task-list-item > input[type=checkbox].task-list-item-checkbox:not([disabled])').next().is('label'));
+    it('adds label after items when options.label and options.labelAfter are truthy', function () {
+        var enabledLabeledParser = md().use(taskLists, { enabled: true, label: true, labelAfter: true });
+        var $$ = cheerio.load(enabledLabeledParser.render(fixtures.ordered));
+        assert($$('.task-list-item > input[type=checkbox].task-list-item-checkbox:not([disabled])').next().is('label'));
+    });
+
+    it.only('renders text with inline formatting correctly when options.labelAfter is truthy', function () {
+        var labelAfterParser = md().use(taskLists, { label: true, labelAfter: true });
+        var $$ = cheerio.load(labelAfterParser.render(fixtures.withFormatting));
+        assert($$('.task-list-item > input[type=checkbox].task-list-item-checkbox').next().is('label'));
+        
+        var em = $$('.task-list-item').eq(0);
+        var strong = $$('.task-list-item').eq(1);
+        var code = $$('.task-list-item').eq(2);
+
+        console.log(labelAfterParser.render(fixtures.withFormatting));
+        
+        // Correct inline formatting
+        assert(em.html().includes('<em>emphasis</em>'));
+        assert(strong.html().includes('<strong>strong</strong>'));
+        assert(code.html().includes('<code>code</code>'));
+        
+        // Formatting marker are gone
+        assert(!em.html().includes('_'));
+        assert(!strong.html().includes('**'));
+        assert(!code.html().includes('`'));
     });
 
     it('does NOT render [  ], "[ ]" (no space after closing bracket), [ x], [x ], or [ x ] as checkboxes', function () {

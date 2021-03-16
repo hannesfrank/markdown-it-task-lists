@@ -1,0 +1,3 @@
+- [ ] text _emphasis_
+- [ ] **strong** text
+  - [x] inline `code`
